@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "twbench"
+version = "0.1.0"
+description = "Agent skill that writes pytest tests verified by mutation testing, plus a benchmark that measures its effect"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = ["pytest>=8", "hypothesis>=6", "matplotlib>=3.7"]
+
+[project.optional-dependencies]
+api = ["openai>=1.40"]
+local = ["torch>=2.3", "transformers>=4.56", "accelerate>=1.0", "bitsandbytes>=0.45; platform_system == 'Linux'"]
+dev = ["ruff>=0.6"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: recomputes the benchmark ceiling (~2 min)"]
+addopts = "-m 'not slow'"
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+extend-exclude = ["bench/tasks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]

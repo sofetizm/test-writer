@@ -1,0 +1,78 @@
+{
+ "durations": {
+  "score": 100.0,
+  "killed": 31,
+  "total": 31,
+  "equivalent_survivors": []
+ },
+ "intervals": {
+  "score": 100.0,
+  "killed": 35,
+  "total": 35,
+  "equivalent_survivors": []
+ },
+ "lru_cache": {
+  "score": 100.0,
+  "killed": 28,
+  "total": 28,
+  "equivalent_survivors": []
+ },
+ "money": {
+  "score": 100.0,
+  "killed": 32,
+  "total": 32,
+  "equivalent_survivors": []
+ },
+ "pagination": {
+  "score": 100.0,
+  "killed": 25,
+  "total": 25,
+  "equivalent_survivors": []
+ },
+ "password_policy": {
+  "score": 100.0,
+  "killed": 48,
+  "total": 48,
+  "equivalent_survivors": []
+ },
+ "rate_limiter": {
+  "score": 100.0,
+  "killed": 29,
+  "total": 29,
+  "equivalent_survivors": []
+ },
+ "retry_backoff": {
+  "score": 100.0,
+  "killed": 34,
+  "total": 34,
+  "equivalent_survivors": []
+ },
+ "semver": {
+  "score": 97.1,
+  "killed": 33,
+  "total": 34,
+  "equivalent_survivors": [
+   {
+    "line": 25,
+    "col": 64,
+    "code": "return (0, tuple((0, p, \"\") if isinstance(p, int) else (1, 0, p) for p in pre))",
+    "mutation": "`0` -> `1`",
+    "kind": "constant"
+   }
+  ]
+ },
+ "slugify": {
+  "score": 92.9,
+  "killed": 13,
+  "total": 14,
+  "equivalent_survivors": [
+   {
+    "line": 29,
+    "col": 8,
+    "code": "if idx > 0:",
+    "mutation": "`>` -> `>=`",
+    "kind": "compare"
+   }
+  ]
+ }
+}
