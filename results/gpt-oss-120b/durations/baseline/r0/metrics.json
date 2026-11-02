@@ -1,0 +1,49 @@
+{
+ "task": "durations",
+ "condition": "baseline",
+ "repeat": 0,
+ "run": "gpt-oss-120b",
+ "ceiling": 100.0,
+ "episode": {
+  "task": "durations",
+  "condition": "baseline",
+  "turns": 3,
+  "actions": [
+   "run_tests",
+   "run_tests",
+   "finish"
+  ],
+  "input_tokens": 5526,
+  "output_tokens": 2947,
+  "cost_usd": 0.0025970999999999998,
+  "seconds": 32.6,
+  "finished": true,
+  "wrote_tests": true
+ },
+ "wall_seconds": 39.1,
+ "tests_passed": 30,
+ "tests_failed": 2,
+ "tests_error": 0,
+ "pytest_exit": 1,
+ "excluded_tests": 2,
+ "valid": true,
+ "score": 93.5,
+ "killed": 29,
+ "total": 31,
+ "survivors": [
+  {
+   "line": 4,
+   "col": 15,
+   "code": "UNITS = {\"d\": 86400, \"h\": 3600, \"m\": 60, \"s\": 1}",
+   "mutation": "`86400` -> `86401`",
+   "kind": "constant"
+  },
+  {
+   "line": 4,
+   "col": 27,
+   "code": "UNITS = {\"d\": 86400, \"h\": 3600, \"m\": 60, \"s\": 1}",
+   "mutation": "`3600` -> `3601`",
+   "kind": "constant"
+  }
+ ]
+}

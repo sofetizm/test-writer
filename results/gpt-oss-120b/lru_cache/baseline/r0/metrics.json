@@ -1,0 +1,33 @@
+{
+ "task": "lru_cache",
+ "condition": "baseline",
+ "repeat": 0,
+ "run": "gpt-oss-120b",
+ "ceiling": 100.0,
+ "episode": {
+  "task": "lru_cache",
+  "condition": "baseline",
+  "turns": 2,
+  "actions": [
+   "run_tests",
+   "finish"
+  ],
+  "input_tokens": 2515,
+  "output_tokens": 1299,
+  "cost_usd": 0.00115665,
+  "seconds": 15.3,
+  "finished": true,
+  "wrote_tests": true
+ },
+ "wall_seconds": 65.8,
+ "tests_passed": 7,
+ "tests_failed": 0,
+ "tests_error": 0,
+ "pytest_exit": 0,
+ "excluded_tests": 0,
+ "valid": true,
+ "score": 100.0,
+ "killed": 28,
+ "total": 28,
+ "survivors": []
+}

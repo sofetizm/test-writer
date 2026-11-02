@@ -18,9 +18,9 @@ from __future__ import annotations
 
 import argparse
 import ast
+import importlib.util
 import json
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -217,12 +217,29 @@ def _env(root: Path) -> dict:
     return env
 
 
-def _pytest_cmd(tests: list[str], deselect: list[str], extra: list[str]) -> list[str]:
-    cmd = [sys.executable, "-m", "pytest", "-x", "-q", "--no-header", "-p", "no:cacheprovider",
-           *tests, *extra]
+def _pytest_cmd(tests: list[str], deselect: list[str], extra: list[str],
+                cache_dir: Path | None = None) -> list[str]:
+    cmd = [sys.executable, "-m", "pytest", "-q", "--no-header"]
+    if cache_dir is None:
+        cmd += ["-x", "-p", "no:cacheprovider"]
+    else:
+        cmd += ["-o", f"cache_dir={cache_dir}"]
+    if _HAS_HYPOTHESIS:
+        cmd.append("--hypothesis-seed=0")
+    cmd += [*tests, *extra]
     for d in deselect:
         cmd += ["--deselect", d]
     return cmd
+
+
+_HAS_HYPOTHESIS = importlib.util.find_spec("hypothesis") is not None
+
+
+def _failed_ids(cache_dir: Path) -> list[str]:
+    path = cache_dir / "v" / "cache" / "lastfailed"
+    if not path.exists():
+        return []
+    return sorted(json.loads(path.read_text(encoding="utf-8")))
 
 
 def _run(cmd, cwd: Path, timeout: float):
@@ -239,9 +256,6 @@ def _copy_project(root: Path, dest: Path) -> Path:
     shutil.copytree(root, dest, ignore=lambda d, names: [n for n in names if n in IGNORE_DIRS
                                                            or n.endswith(".pyc")])
     return dest
-
-
-_FAILED_RE = re.compile(r"^(?:FAILED|ERROR) (\S+)", re.MULTILINE)
 
 
 @dataclass
@@ -289,14 +303,20 @@ def run(project: Path, module: Path, tests: list[str], workers: int = 0,
                                 "`pip install -e .` or uninstall the package.")
                 return report
 
-        code, out, base_t = _run(_pytest_cmd(tests, [], extra + ["-rfE"]), base_dir, 600)
-        if code != 0 and deselect_failing and code == 1:
-            report.deselected = sorted(set(_FAILED_RE.findall(out)))
+        cache_dir = tmp / "pytest-cache"
+        code, out, base_t = _run(_pytest_cmd(tests, [], extra + ["-rfE", "--tb=short"], cache_dir),
+                                 base_dir, 600)
+        failing = _failed_ids(cache_dir)
+        if code == 1 and deselect_failing:
+            report.deselected = failing
             code, out, base_t = _run(_pytest_cmd(tests, report.deselected, extra), base_dir, 600)
         report.baseline_output = out[-3000:]
         if code != 0:
-            report.error = ("tests do not pass on the original code (exit code "
-                            f"{code}); fix them before measuring mutation score")
+            what = (f"{len(failing)} test(s) fail on the original code: "
+                    + ", ".join(failing[:8]) if code == 1 and failing
+                    else f"pytest could not run the tests (exit code {code}, e.g. a syntax "
+                         "error, an import error or invalid parametrize arguments)")
+            report.error = f"{what}. Fix the tests before measuring mutation score"
             return report
         report.baseline_ok = True
 
@@ -319,6 +339,7 @@ def run(project: Path, module: Path, tests: list[str], workers: int = 0,
                 return MutantResult(m, "error")
             finally:
                 target.write_text(source, encoding="utf-8")
+                shutil.rmtree(wdir / ".hypothesis", ignore_errors=True)
                 pool.put(wdir)
             if rc is None:
                 return MutantResult(m, "timeout", secs)

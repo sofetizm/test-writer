@@ -1,0 +1,62 @@
+{
+ "task": "slugify",
+ "condition": "baseline",
+ "repeat": 0,
+ "run": "gpt-oss-120b",
+ "ceiling": 92.9,
+ "episode": {
+  "task": "slugify",
+  "condition": "baseline",
+  "turns": 3,
+  "actions": [
+   "run_tests",
+   "finish"
+  ],
+  "input_tokens": 4234,
+  "output_tokens": 1736,
+  "cost_usd": 0.0016767000000000002,
+  "seconds": 30.8,
+  "finished": true,
+  "wrote_tests": true
+ },
+ "wall_seconds": 80.4,
+ "tests_passed": 15,
+ "tests_failed": 0,
+ "tests_error": 0,
+ "pytest_exit": 0,
+ "excluded_tests": 0,
+ "valid": true,
+ "score": 71.4,
+ "killed": 10,
+ "total": 14,
+ "survivors": [
+  {
+   "line": 13,
+   "col": 42,
+   "code": "def slugify(text: str, max_length: int = 50, separator: str = \"-\") -> str:",
+   "mutation": "`50` -> `51`",
+   "kind": "constant"
+  },
+  {
+   "line": 25,
+   "col": 8,
+   "code": "if len(slug) <= max_length:",
+   "mutation": "`<=` -> `<`",
+   "kind": "compare"
+  },
+  {
+   "line": 29,
+   "col": 8,
+   "code": "if idx > 0:",
+   "mutation": "`>` -> `>=`",
+   "kind": "compare"
+  },
+  {
+   "line": 29,
+   "col": 14,
+   "code": "if idx > 0:",
+   "mutation": "`0` -> `1`",
+   "kind": "constant"
+  }
+ ]
+}

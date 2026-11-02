@@ -1,0 +1,42 @@
+{
+ "task": "rate_limiter",
+ "condition": "baseline",
+ "repeat": 0,
+ "run": "gpt-oss-120b",
+ "ceiling": 100.0,
+ "episode": {
+  "task": "rate_limiter",
+  "condition": "baseline",
+  "turns": 3,
+  "actions": [
+   "run_tests",
+   "run_tests",
+   "finish"
+  ],
+  "input_tokens": 4879,
+  "output_tokens": 2395,
+  "cost_usd": 0.00216885,
+  "seconds": 36.4,
+  "finished": true,
+  "wrote_tests": true
+ },
+ "wall_seconds": 88.1,
+ "tests_passed": 7,
+ "tests_failed": 0,
+ "tests_error": 0,
+ "pytest_exit": 0,
+ "excluded_tests": 0,
+ "valid": true,
+ "score": 96.6,
+ "killed": 28,
+ "total": 29,
+ "survivors": [
+  {
+   "line": 24,
+   "col": 19,
+   "code": "elapsed = now - self._last",
+   "mutation": "`-` -> `+`",
+   "kind": "binop"
+  }
+ ]
+}

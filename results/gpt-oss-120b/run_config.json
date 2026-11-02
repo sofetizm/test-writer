@@ -1,0 +1,13 @@
+{
+  "backend": "openai",
+  "model": "openai/gpt-oss-120b",
+  "temperature": 0.0,
+  "reasoning_effort": "low",
+  "price_in_per_1m": 0.15,
+  "price_out_per_1m": 0.6,
+  "max_turns": 6,
+  "conditions": [
+    "baseline",
+    "skill"
+  ]
+}

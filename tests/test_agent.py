@@ -1,7 +1,7 @@
 
 import pytest
 
-from twbench.agent import compact, parse_reply, run_episode
+from twbench.agent import compact, cut_after_action, parse_reply, run_episode
 from twbench.backends import Scripted
 from twbench.conditions import CONDITIONS, parse_conditions, reference
 from twbench.run import evaluate_tests
@@ -21,7 +21,16 @@ def test_parse_reply_variants():
     assert parse_reply("text only") == (None, None, None)
     two = "```python\nA = 1\n```\n```py\nB = 2\n```\nACTION: finish"
     assert parse_reply(two)[0] == "B = 2\n"
-    assert parse_reply("ACTION: run_tests\nACTION: finish")[1] == "finish"
+    assert parse_reply("ACTION: run_tests\nACTION: finish")[1] == "run_tests"
+
+
+def test_parse_reply_first_action_wins_and_rest_is_ignored():
+    assert parse_reply("ACTION: run_mutationACTION: finish")[1] == "run_mutation"
+    assert parse_reply("ACTION: run_testsThe suite now passes.")[1] == "run_tests"
+    hallucinated = 'ACTION: run_tests```json\n{"passed": 19}\n```'
+    assert parse_reply(hallucinated)[1] == "run_tests"
+    assert cut_after_action(hallucinated) == "ACTION: run_tests"
+    assert parse_reply("ACTION: magic")[1] is None
 
 
 def test_compact_keeps_only_latest_code():

@@ -47,3 +47,19 @@ def test_run_resume_report(tmp_path, monkeypatch, capsys):
     report.main()
     text = (tmp_path / "RESULTS.md").read_text()
     assert "| model | skill | 1 | **100.0**" in text
+
+
+def test_rescore_updates_scores(tmp_path, monkeypatch):
+    from twbench.rescore import rescore
+
+    monkeypatch.setattr(run_mod, "OpenAICompatible", FakeModel)
+    monkeypatch.setattr(sys, "argv", ["run", "--model", "fake/model", "--tasks", "retry_backoff",
+                                      "--conditions", "skill", "--out", str(tmp_path)])
+    run_mod.main()
+    path = tmp_path / "model/retry_backoff/skill/r0/metrics.json"
+    broken = json.loads(path.read_text())
+    broken["score"] = 0.0
+    path.write_text(json.dumps(broken))
+    assert rescore(tmp_path) == [("model/retry_backoff/skill/r0", 0.0, 100.0)]
+    fixed = json.loads(path.read_text())
+    assert fixed["episode"] == broken["episode"] and fixed["score"] == 100.0

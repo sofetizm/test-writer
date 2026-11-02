@@ -1,0 +1,43 @@
+{
+ "task": "intervals",
+ "condition": "skill",
+ "repeat": 0,
+ "run": "gpt-oss-120b",
+ "ceiling": 100.0,
+ "episode": {
+  "task": "intervals",
+  "condition": "skill",
+  "turns": 5,
+  "actions": [
+   "run_mutation",
+   "run_mutation",
+   "run_mutation",
+   "finish"
+  ],
+  "input_tokens": 14727,
+  "output_tokens": 4311,
+  "cost_usd": 0.00479565,
+  "seconds": 106.0,
+  "finished": true,
+  "wrote_tests": true
+ },
+ "wall_seconds": 163.8,
+ "tests_passed": 23,
+ "tests_failed": 0,
+ "tests_error": 0,
+ "pytest_exit": 0,
+ "excluded_tests": 0,
+ "valid": true,
+ "score": 97.1,
+ "killed": 34,
+ "total": 35,
+ "survivors": [
+  {
+   "line": 22,
+   "col": 41,
+   "code": "result[-1][1] = max(result[-1][1], end)",
+   "mutation": "`1` -> `0`",
+   "kind": "constant"
+  }
+ ]
+}

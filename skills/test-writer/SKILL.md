@@ -45,11 +45,15 @@ See `references/checklist.md` for the full list of what to look for.
 Patterns: `references/patterns.md`. Mistakes to avoid: `references/anti-patterns.md`.
 
 ### 3. Run the tests on the original code
-All tests must pass. If one fails, decide which side is wrong:
+Always run plain pytest before mutation testing. All tests must pass. If one fails:
+- read the **actual** value in the failure (`assert 849 == 850`) and trace the code by
+  hand to see which one is right. Do not guess a new expected value;
 - the **expectation** is wrong → fix the test;
 - the **code** contradicts its own docstring/contract → this is a real bug. Do not
   change the code under test. Keep the test, mark it
-  `@pytest.mark.xfail(reason="BUG: ...", strict=True)` and report the bug to the user.
+  `@pytest.mark.xfail(reason="BUG: ...", strict=True)` and report the bug to the user;
+- still unsure after two attempts on the same case → remove that case and mention it
+  in the report. Do not loop.
 
 ### 4. Measure with mutation testing
 ```bash

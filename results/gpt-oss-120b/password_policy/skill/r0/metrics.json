@@ -1,0 +1,72 @@
+{
+ "task": "password_policy",
+ "condition": "skill",
+ "repeat": 0,
+ "run": "gpt-oss-120b",
+ "ceiling": 100.0,
+ "episode": {
+  "task": "password_policy",
+  "condition": "skill",
+  "turns": 6,
+  "actions": [
+   "run_mutation",
+   "run_mutation",
+   "run_mutation",
+   "run_mutation",
+   "run_mutation"
+  ],
+  "input_tokens": 21786,
+  "output_tokens": 7408,
+  "cost_usd": 0.007712699999999999,
+  "seconds": 127.6,
+  "finished": false,
+  "wrote_tests": true
+ },
+ "wall_seconds": 133.5,
+ "tests_passed": 7,
+ "tests_failed": 10,
+ "tests_error": 0,
+ "pytest_exit": 1,
+ "excluded_tests": 10,
+ "valid": true,
+ "score": 89.6,
+ "killed": 43,
+ "total": 48,
+ "survivors": [
+  {
+   "line": 28,
+   "col": 9,
+   "code": "problems.append(\"no_digit\")",
+   "mutation": "call statement removed",
+   "kind": "drop_call"
+  },
+  {
+   "line": 33,
+   "col": 40,
+   "code": "if any(password[i] == password[i + 1] == password[i + 2] for i in range(len(password) - 2)):",
+   "mutation": "`1` -> `0`",
+   "kind": "constant"
+  },
+  {
+   "line": 45,
+   "col": 8,
+   "code": "if n > 0:",
+   "mutation": "`>` -> `>=`",
+   "kind": "compare"
+  },
+  {
+   "line": 45,
+   "col": 12,
+   "code": "if n > 0:",
+   "mutation": "`0` -> `1`",
+   "kind": "constant"
+  },
+  {
+   "line": 47,
+   "col": 5,
+   "code": "return \"strong\"",
+   "mutation": "`return ...` -> `return None`",
+   "kind": "return_none"
+  }
+ ]
+}

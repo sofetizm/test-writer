@@ -1,0 +1,40 @@
+{
+ "task": "semver",
+ "condition": "baseline",
+ "repeat": 0,
+ "run": "gpt-oss-120b",
+ "ceiling": 97.1,
+ "episode": {
+  "task": "semver",
+  "condition": "baseline",
+  "turns": 1,
+  "actions": [
+   "finish"
+  ],
+  "input_tokens": 783,
+  "output_tokens": 1204,
+  "cost_usd": 0.00083985,
+  "seconds": 3.0,
+  "finished": true,
+  "wrote_tests": true
+ },
+ "wall_seconds": 11.6,
+ "tests_passed": 38,
+ "tests_failed": 2,
+ "tests_error": 0,
+ "pytest_exit": 1,
+ "excluded_tests": 2,
+ "valid": true,
+ "score": 97.1,
+ "killed": 33,
+ "total": 34,
+ "survivors": [
+  {
+   "line": 25,
+   "col": 64,
+   "code": "return (0, tuple((0, p, \"\") if isinstance(p, int) else (1, 0, p) for p in pre))",
+   "mutation": "`0` -> `1`",
+   "kind": "constant"
+  }
+ ]
+}

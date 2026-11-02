@@ -79,29 +79,41 @@ def per_task(rows: list[dict]) -> tuple[list[str], list[str], dict]:
     return tasks, cols, {k: statistics.fmean(v) for k, v in cell.items()}
 
 
-def plot(summary: dict, path: Path) -> bool:
+def plot(rows: list[dict], path: Path, a: str = "baseline", b: str = "skill") -> bool:
+    """Per-task dumbbell chart: one row per task, a dot per condition, a line between them."""
     try:
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except ImportError:
         return False
-    runs = sorted({r for r, _ in summary})
-    conds = [c for c in ("baseline", "skill-text", "skill") if any((r, c) in summary for r in runs)]
-    colors = {"baseline": "#9aa5b1", "skill-text": "#7fb3d5", "skill": "#1f6feb"}
-    width = 0.8 / max(len(conds), 1)
-    fig, ax = plt.subplots(figsize=(1.8 + 1.6 * len(runs) * max(len(conds), 1) / 2, 4))
-    for i, c in enumerate(conds):
-        xs = [j + i * width for j in range(len(runs))]
-        ys = [summary.get((r, c), {}).get("score", 0) for r in runs]
-        bars = ax.bar(xs, ys, width, label=c, color=colors.get(c))
-        ax.bar_label(bars, fmt="%.0f", fontsize=8, padding=2)
-    ax.set_xticks([j + width * (len(conds) - 1) / 2 for j in range(len(runs))])
-    ax.set_xticklabels(runs)
-    ax.set_ylabel("Mutation score, %")
-    ax.set_ylim(0, 105)
-    ax.spines[["top", "right"]].set_visible(False)
-    ax.legend(frameon=False, ncols=len(conds), loc="upper center", bbox_to_anchor=(0.5, 1.12))
+    runs = sorted({m["run"] for m in rows})
+    score = defaultdict(list)
+    for m in rows:
+        score[(m["run"], m["task"], m["condition"])].append(m["score"])
+    if not any(k[2] == b for k in score) or not any(k[2] == a for k in score):
+        return False
+    fig, axes = plt.subplots(1, len(runs), figsize=(5.2 * len(runs), 4.6), squeeze=False)
+    for ax, run in zip(axes[0], runs, strict=True):
+        tasks = sorted({t for r, t, _ in score if r == run},
+                       key=lambda t: statistics.fmean(score.get((run, t, a), [0])))
+        for y, t in enumerate(tasks):
+            va = statistics.fmean(score[(run, t, a)]) if (run, t, a) in score else None
+            vb = statistics.fmean(score[(run, t, b)]) if (run, t, b) in score else None
+            if va is not None and vb is not None:
+                color = "#1f6feb" if vb > va else "#cf222e" if vb < va else "#9aa5b1"
+                ax.plot([va, vb], [y, y], color=color, lw=2, zorder=1)
+            if va is not None:
+                ax.scatter(va, y, color="#9aa5b1", s=40, zorder=2, label=a if y == 0 else None)
+            if vb is not None:
+                ax.scatter(vb, y, color="#1f6feb", s=40, zorder=3, label=b if y == 0 else None)
+        ax.set_yticks(range(len(tasks)))
+        ax.set_yticklabels(tasks)
+        ax.set_xlabel("Mutation score, %")
+        ax.set_title(run, fontsize=11)
+        ax.grid(axis="x", alpha=0.3)
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.legend(frameon=False, loc="lower right")
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     plt.close(fig)
@@ -136,7 +148,7 @@ def render(rows: list[dict], results: Path) -> str:
     for t in tasks:
         vals = [f"{cell[(t, c)]:.0f}" if (t, c) in cell else "—" for c in cols]
         lines.append(f"| {t} | " + " | ".join(vals) + " |")
-    if plot(s, results / "scores.png"):
+    if plot(rows, results / "scores.png"):
         lines += ["", "![scores](scores.png)"]
     return "\n".join(lines) + "\n"
 

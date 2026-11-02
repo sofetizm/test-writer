@@ -17,20 +17,29 @@ from .mutation import run as run_mutation
 from .tasks import Task, make_workspace, run_pytest
 
 _CODE = re.compile(r"```(?:python|py)\s*\n(.*?)```", re.DOTALL)
-_ACTION = re.compile(r"^\s*\**ACTION:\**\s*([a-z_]+)(?:\s+(\S+))?\s*$", re.MULTILINE | re.IGNORECASE)
+_ACTION = re.compile(r"\**ACTION:\**\s*(run_tests|run_mutation|read_reference|finish)"
+                     r"(?:[ \t]+([\w.-]+\.md))?", re.IGNORECASE)
 MAX_TOOL_OUTPUT = 2500
 OMITTED = "```python\n# (earlier version of the test file omitted)\n```"
 
 
 def parse_reply(text: str) -> tuple[str | None, str | None, str | None]:
-    """Return (test file content or None, action or None, action argument or None)."""
+    """Return (test file content or None, action or None, action argument or None).
+
+    The first action wins: models sometimes append a second action or invent the
+    tool's output after the action, and everything after the first action is ignored.
+    """
     blocks = _CODE.findall(text or "")
     code = blocks[-1].strip() + "\n" if blocks else None
-    actions = _ACTION.findall(text or "")
-    if not actions:
+    match = _ACTION.search(text or "")
+    if not match:
         return code, None, None
-    name, arg = actions[-1]
-    return code, name.lower(), (arg or None)
+    return code, match.group(1).lower(), match.group(2)
+
+
+def cut_after_action(text: str) -> str:
+    match = _ACTION.search(text or "")
+    return text if not match else text[:match.end()]
 
 
 def compact(messages: list[dict]) -> list[dict]:
@@ -87,9 +96,8 @@ def run_episode(backend: Backend, task: Task, condition: Condition, workspace: P
         ep.input_tokens += reply.input_tokens
         ep.output_tokens += reply.output_tokens
         ep.cost_usd += reply.cost_usd
-        messages.append({"role": "assistant", "content": reply.text})
-
         code, action, arg = parse_reply(reply.text)
+        messages.append({"role": "assistant", "content": cut_after_action(reply.text)})
         if code:
             test_path.write_text(code, encoding="utf-8")
             ep.wrote_tests = True

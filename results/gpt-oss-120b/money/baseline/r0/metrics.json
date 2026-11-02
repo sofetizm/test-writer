@@ -1,0 +1,42 @@
+{
+ "task": "money",
+ "condition": "baseline",
+ "repeat": 0,
+ "run": "gpt-oss-120b",
+ "ceiling": 100.0,
+ "episode": {
+  "task": "money",
+  "condition": "baseline",
+  "turns": 4,
+  "actions": [
+   "run_tests",
+   "run_tests",
+   "finish"
+  ],
+  "input_tokens": 8050,
+  "output_tokens": 4142,
+  "cost_usd": 0.0036927,
+  "seconds": 47.2,
+  "finished": true,
+  "wrote_tests": true
+ },
+ "wall_seconds": 100.8,
+ "tests_passed": 26,
+ "tests_failed": 0,
+ "tests_error": 0,
+ "pytest_exit": 0,
+ "excluded_tests": 0,
+ "valid": true,
+ "score": 96.9,
+ "killed": 31,
+ "total": 32,
+ "survivors": [
+  {
+   "line": 28,
+   "col": 15,
+   "code": "if rest * 2 >= 100:",
+   "mutation": "`2` -> `3`",
+   "kind": "constant"
+  }
+ ]
+}

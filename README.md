@@ -142,11 +142,41 @@ python skills/test-writer/scripts/mutation_score.py ... --deselect-failing
 
 ### Results
 
-> Run the [notebook](notebooks/benchmark_colab.ipynb) and paste `results/RESULTS.md` here.
+`gpt-oss-120b` via Groq (reasoning effort low, temperature 0, up to 6 turns), skill v0.1.
 
-| Model | baseline | skill | Δ (paired) | 95% CI |
-|---|---|---|---|---|
-| gpt-oss-120b | — | — | — | — |
+| | baseline | skill |
+|---|---|---|
+| Mutation score (mean of 10 tasks) | 92.5% | **95.5%** |
+| Injected bugs **missed** by the tests (of 310) | 20 | **12 (−40%)** |
+| Tests failing on correct code (excluded) | 0.9 / task | 1.4 / task |
+| Turns / episode | 2.6 | 5.2 |
+| Tokens / episode | 6.4k | 22.2k |
+| Cost of 10 tasks at Groq paid prices | $0.019 | $0.058 |
+
+**Paired difference skill − baseline: +2.9 p.p., 95% CI [+0.9; +4.8]**, better on 7 tasks,
+equal on 2, worse on 1.
+
+![per-task scores](results/scores.png)
+
+What this shows:
+- **A strong model already writes good tests for small modules** (92.5%), so the absolute
+  gain is small. The useful framing is the misses: the skill **cut the number of injected
+  bugs that slipped through from 20 to 12**.
+- The gain is exactly where the skill aims: surviving *constant* mutants (untested unit
+  sizes, default values) fell from 14 to 7, *comparison* mutants (`<` vs `<=`) from 4 to 2.
+- It costs **3.5× more tokens**: the agent iterates with mutation feedback. At API prices
+  that is still well under a cent per module.
+- The skill makes the agent write more ambitious tests, and more of them are wrong
+  (1.4 vs 0.9 per task). The harness excludes them before scoring.
+- In 5 of 10 skill episodes the agent did not finish within the 6-turn limit: it ran mutation testing
+  before plain pytest, and it repeatedly guessed new expected values for failing tests.
+  Both are addressed in skill v0.2 (*run pytest first; read the actual value; at most two
+  attempts per failing case*). Re-running the benchmark with v0.2 is the next step.
+- 10 tasks and one repeat: the confidence interval excludes zero, but treat the size of
+  the effect as approximate.
+
+Full tables: [`results/RESULTS.md`](results/RESULTS.md). Every episode's transcript and
+final test file: [`results/gpt-oss-120b/`](results/gpt-oss-120b).
 
 ### Reproduce
 

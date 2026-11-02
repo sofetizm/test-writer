@@ -133,7 +133,13 @@ def test_original_files_untouched(tmp_path):
 def test_failing_baseline_is_an_error(tmp_path):
     proj = _project(tmp_path, "from calc import clamp\n\ndef test_x():\n    assert clamp(1, 0, 2) == 5\n")
     rep = run(proj, Path("calc.py"), ["tests/test_calc.py"])
-    assert rep.error and "do not pass" in rep.error and rep.score is None
+    assert rep.error.startswith("1 test(s) fail on the original code: tests/test_calc.py::test_x")
+    assert rep.score is None
+
+
+def test_collection_error_is_explained(tmp_path):
+    rep = run(_project(tmp_path, "def test_x(:\n    pass\n"), Path("calc.py"), ["tests/test_calc.py"])
+    assert rep.error.startswith("pytest could not run the tests")
 
 
 def test_deselect_failing(tmp_path):
@@ -171,3 +177,20 @@ def test_cli_text_and_exit_code(tmp_path):
                           "tests/test_calc.py"], cwd=proj, capture_output=True, text=True)
     assert res.returncode == 2
     assert res.stdout.startswith("ERROR:")
+
+
+def test_deselect_collects_all_failures_including_ids_with_spaces(tmp_path):
+    tests = STRONG + textwrap.dedent("""
+
+        def test_wrong_one():
+            assert clamp(1, 0, 2) == 5
+
+        @pytest.mark.parametrize("x", ["  a b  "])
+        def test_wrong_with_spaces(x):
+            assert clamp(1, 0, 2) == 7
+    """)
+    rep = run(_project(tmp_path, tests), Path("calc.py"), ["tests/test_calc.py"],
+              deselect_failing=True, workers=2)
+    assert rep.deselected == ["tests/test_calc.py::test_wrong_one",
+                              "tests/test_calc.py::test_wrong_with_spaces[  a b  ]"]
+    assert rep.score == 100.0
