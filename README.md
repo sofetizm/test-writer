@@ -1,25 +1,23 @@
-# test-writer — an agent skill for tests that actually catch bugs
+# test-writer — навык для ИИ-агентов: тесты, которые ловят баги
 
 [![CI](https://github.com/sofetizm/test-writer/actions/workflows/ci.yml/badge.svg)](https://github.com/sofetizm/test-writer/actions/workflows/ci.yml)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sofetizm/test-writer/blob/main/notebooks/benchmark_colab.ipynb)
 ![Agent Skills](https://img.shields.io/badge/Agent%20Skills-SKILL.md-8A2BE2)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-**[Русская версия](README.ru.md)**
+ИИ-ассистенты пишут тесты, которые проходят. Это не то же самое, что тесты, которые
+**падают, когда код неправильный**. `test-writer` — навык (Agent Skill) для Claude Code,
+Codex CLI, GitHub Copilot, Cursor, Gemini CLI и других агентов. С ним агент проверяет
+свои тесты через **mutation testing**: в код вносятся маленькие баги, и агент улучшает
+тесты, пока они их не поймают.
 
-AI assistants write tests that pass. That is not the same as tests that **fail when the
-code is wrong**. `test-writer` is an [Agent Skill](https://agentskills.io) for Claude Code,
-Codex CLI, GitHub Copilot, Cursor, Gemini CLI and other agents. It makes the agent check its
-own tests with **mutation testing**: small bugs are injected into the code, and the agent
-keeps improving the tests until they catch them.
+В репозитории также есть **бенчмарк**, который измеряет, помогает ли навык: одна и та же
+модель пишет тесты к 10 модулям с навыком и без, а тесты оцениваются по доле пойманных
+внесённых багов.
 
-The repository also contains a **benchmark** that measures whether the skill helps:
-the same model writes tests for 10 modules with and without the skill, and the tests are
-scored by how many injected bugs they catch.
+## Проблема на примере
 
-## The problem in one example
-
-A typical AI-written test for a pagination helper:
+Типичный тест от ИИ для функции пагинации:
 
 ```python
 def test_paginate():
@@ -29,10 +27,9 @@ def test_paginate():
     assert result["has_next"]
 ```
 
-It passes. Now the skill's script injects 25 bugs into `paginate` and runs the test:
+Он проходит. Скрипт навыка вносит в `paginate` 25 багов и запускает тест:
 
 ```text
-$ python mutation_score.py --module pagination.py --tests tests/test_pagination.py
 Mutation score: 40.0%  (10/25 mutants killed, 15 survived, 0 timeouts) in 9.9s
 
 Surviving mutants (behaviour that no test checks):
@@ -43,21 +40,19 @@ Surviving mutants (behaviour that no test checks):
   ...
 ```
 
-60% of these bugs would ship unnoticed. With the skill, the agent reads this list and
-adds the missing boundary and field checks until the survivors are gone (or proven
-equivalent).
+60% таких багов прошли бы незамеченными. С навыком агент читает этот список и добавляет
+недостающие проверки границ и полей, пока выжившие мутанты не исчезнут или не окажутся
+эквивалентными (не меняющими поведение кода).
 
-## Install
-
-With the `skills` CLI (installs into the folders of the agents you have):
+## Установка
 
 ```bash
 npx skills add sofetizm/test-writer
 ```
 
-Or copy `skills/test-writer/` into the skills folder of your agent:
+Или скопируй папку `skills/test-writer/` в папку навыков своего агента:
 
-| Agent | Project | User (all projects) |
+| Агент | В проекте | Для всех проектов |
 |---|---|---|
 | Claude Code | `.claude/skills/test-writer/` | `~/.claude/skills/test-writer/` |
 | Codex CLI | `.agents/skills/test-writer/` | `~/.agents/skills/test-writer/` |
@@ -65,172 +60,171 @@ Or copy `skills/test-writer/` into the skills folder of your agent:
 | Cursor | `.cursor/skills/test-writer/` | — |
 | Gemini CLI | `.gemini/skills/test-writer/` | — |
 
-Then just ask: *"write tests for `src/billing/discounts.py`"*. The agent loads the skill
-when the task is about tests.
+После этого достаточно попросить: *«напиши тесты для `src/billing/discounts.py`»*.
+Агент подключает навык сам, когда задача касается тестов.
 
-Requirements in the project: Python 3.10+ and pytest. Hypothesis is used if installed.
+Что нужно в проекте: Python 3.10+ и pytest. Hypothesis используется, если установлен.
 
-## What the skill makes the agent do
+## Что навык заставляет делать агента
 
-1. **Plan before writing**: behaviours, branches, boundaries (`b-1`, `b`, `b+1` for every
-   comparison), error paths, invariants, state changes.
-2. **Write precise tests**: exact expected values, whole-structure comparisons,
-   `pytest.raises(..., match=...)`, parametrized boundary tables, property-based tests
-   for invariants, injected clocks instead of `sleep`.
-3. **Run on the original code**. A failing test is either a wrong expectation (fix the
-   test) or a real bug (keep it as `xfail(strict=True)` and report it). The code under
-   test is never changed to make tests pass.
-4. **Run mutation testing** and fix every surviving mutant, or explain why it is
-   equivalent. Stop at ≥ 90% or after 4 iterations.
-5. **Report**: what is covered, the final score, bugs found.
+1. **Составить план**: поведение, ветки, границы (`b-1`, `b`, `b+1` для каждого сравнения),
+   ошибки, инварианты, изменения состояния.
+2. **Писать точные тесты**: точные ожидаемые значения, сравнение структур целиком,
+   `pytest.raises(..., match=...)`, таблицы границ через `parametrize`, property-based
+   тесты, подменённые часы вместо `sleep`.
+3. **Запустить на исходном коде.** Упавший тест — это либо неверное ожидание (исправить
+   тест), либо настоящий баг (оставить как `xfail(strict=True)` и сообщить). Код под
+   тестом не меняется ради прохождения тестов.
+4. **Запустить mutation testing** и закрыть каждого выжившего мутанта или объяснить, почему
+   он эквивалентный. Остановиться на ≥ 90% или после 4 итераций.
+5. **Отчитаться**: что покрыто, итоговый score, найденные баги.
 
-Files: [`SKILL.md`](skills/test-writer/SKILL.md),
+Файлы навыка: [`SKILL.md`](skills/test-writer/SKILL.md),
 [`references/checklist.md`](skills/test-writer/references/checklist.md),
 [`references/patterns.md`](skills/test-writer/references/patterns.md),
 [`references/anti-patterns.md`](skills/test-writer/references/anti-patterns.md),
 [`scripts/mutation_score.py`](skills/test-writer/scripts/mutation_score.py).
 
-## The mutation script on its own
+## Скрипт mutation testing отдельно
 
-`mutation_score.py` is a single file with no dependencies besides pytest. You can use it
-without any AI, e.g. in CI or code review.
+`mutation_score.py` — один файл, которому нужен только pytest. Им можно пользоваться и без
+ИИ, например в CI или на код-ревью.
 
 ```bash
 python skills/test-writer/scripts/mutation_score.py --module src/pkg/mod.py --tests tests/test_mod.py
-python skills/test-writer/scripts/mutation_score.py ... --json          # machine-readable
-python skills/test-writer/scripts/mutation_score.py ... --deselect-failing
+python skills/test-writer/scripts/mutation_score.py ... --json              # вывод для программ
+python skills/test-writer/scripts/mutation_score.py ... --deselect-failing  # пропустить падающие тесты
 ```
 
-- **Operators**: arithmetic (`+ - * / // % **`), comparisons, `and`/`or`, removing `not`
-  and unary minus, negating `if` conditions, constants (`0↔1`, `n→n+1`, `True↔False`),
-  `return x → return None`, deleting call statements (`items.append(x)`),
-  `min↔max`, `any↔all`.
-- **Safe**: the project is copied to a temporary directory; your files are never touched.
-- **Fast**: mutants run in parallel; `pytest -x` stops at the first failure; infinite
-  loops created by a mutant are cut by a timeout and count as caught.
-- **Honest**: it refuses to score if the tests fail on the original code, and it detects
-  when `import pkg` resolves to an installed copy instead of your source (in that case
-  mutations would be invisible and every test would look useless).
-- Docstrings, type annotations and `if __name__ == "__main__"` blocks are not mutated.
+- **Какие баги вносит:** арифметика (`+ - * / // % **`), сравнения, `and`/`or`, удаление
+  `not` и унарного минуса, инверсия условий `if`, константы (`0↔1`, `n→n+1`,
+  `True↔False`), `return x → return None`, удаление вызовов-инструкций
+  (`items.append(x)`), `min↔max`, `any↔all`.
+- **Безопасно:** проект копируется во временную папку, твои файлы не меняются.
+- **Быстро:** мутанты проверяются параллельно, `pytest -x` останавливается на первой
+  ошибке, бесконечные циклы обрываются по таймауту и считаются пойманными.
+- **Честно:** скрипт не считает оценку, если тесты падают на исходном коде, и замечает,
+  когда `import pkg` берёт установленную копию пакета вместо твоих исходников (тогда
+  мутации были бы невидимы).
+- **Воспроизводимо:** для Hypothesis фиксируется seed, оценка не «плавает» между запусками.
+- Docstring'и, аннотации типов и блок `if __name__ == "__main__"` не мутируются.
 
-## Benchmark
+## Бенчмарк
 
-**Question:** does the skill make an agent write tests that catch more bugs?
+- 10 модулей с подвохами: длительности, интервалы, округление денег, slug с транслитерацией,
+  LRU-кеш, политика паролей, rate limiter, пагинация, semver, задержки повторов.
+- Три условия с одной и той же моделью, протоколом и инструментами:
 
-**Design**
-- 10 small but tricky modules in [`bench/tasks/`](bench/tasks): durations, intervals,
-  money rounding, slugs with Cyrillic transliteration, an LRU cache, a password policy,
-  a token-bucket rate limiter, pagination, semantic versions, retry backoff.
-- The same model, prompt protocol and tools in every condition:
-
-  | Condition | What the agent has |
+  | Условие | Что есть у агента |
   |---|---|
-  | `baseline` | write the test file, run pytest |
-  | `skill` | + `SKILL.md` in context, references on demand, the mutation script as a tool |
-  | `skill-text` | ablation: the skill text and references, but **no** mutation script |
+  | `baseline` | написать файл тестов, запустить pytest |
+  | `skill` | + `SKILL.md` в контексте, справочники по запросу, скрипт mutation testing |
+  | `skill-text` | абляция: текст навыка и справочники, но **без** скрипта |
 
-- The agent works in up to 6 turns through a plain-text action protocol, so any chat
-  model works: API models and small local models alike.
-- **Metric:** mutation score of the final test file. Tests that fail on the correct code
-  are excluded before scoring (otherwise a wrong test would "catch" every mutant).
-- **Ceiling:** hand-written reference suites in [`bench/reference/`](bench/reference)
-  reach 100% on 8 tasks; on 2 tasks the remaining survivors are *equivalent* mutants
-  that no test can catch ([`bench/ceiling.json`](bench/ceiling.json)). Scores are also
-  reported as % of this ceiling.
-- **Statistics:** tasks differ a lot in difficulty, so the headline number is the
-  **paired** difference skill − baseline on the same task, with a bootstrap 95% CI.
+- Агент работает до 6 ходов через простой текстовый протокол действий, поэтому подходит
+  любая чат-модель: и через API, и локальная.
+- **Метрика:** mutation score итогового файла тестов. Тесты, падающие на правильном коде,
+  исключаются до подсчёта.
+- **Потолок:** эталонные тесты дают 100% на 8 задачах; на двух оставшиеся мутанты
+  эквивалентные, их невозможно поймать ([`bench/ceiling.json`](bench/ceiling.json)).
+- **Статистика:** главный результат — парная разница skill − baseline на одних и тех же
+  задачах с 95% доверительным интервалом (бутстреп).
 
-### Results
+### Результаты
 
-`gpt-oss-120b` via Groq (reasoning effort low, temperature 0, up to 6 turns), skill v0.1.
+`gpt-oss-120b` через Groq (reasoning effort low, температура 0, до 6 ходов), навык v0.1.
 
-| | baseline | skill |
+| | без навыка | с навыком |
 |---|---|---|
-| Mutation score (mean of 10 tasks) | 92.5% | **95.5%** |
-| Injected bugs **missed** by the tests (of 310) | 20 | **12 (−40%)** |
-| Tests failing on correct code (excluded) | 0.9 / task | 1.4 / task |
-| Turns / episode | 2.6 | 5.2 |
-| Tokens / episode | 6.4k | 22.2k |
-| Cost of 10 tasks at Groq paid prices | $0.019 | $0.058 |
+| Mutation score (среднее по 10 задачам) | 92,5% | **95,5%** |
+| Внесённых багов, которые тесты **пропустили** (из 310) | 20 | **12 (−40%)** |
+| Тестов, падающих на правильном коде (исключаются) | 0,9 на задачу | 1,4 на задачу |
+| Ходов агента | 2,6 | 5,2 |
+| Токенов на задачу | 6,4 тыс. | 22,2 тыс. |
+| Стоимость 10 задач по платным ценам Groq | $0,019 | $0,058 |
 
-**Paired difference skill − baseline: +2.9 p.p., 95% CI [+0.9; +4.8]**, better on 7 tasks,
-equal on 2, worse on 1.
+**Парная разница skill − baseline: +2,9 п.п., 95% ДИ [+0,9; +4,8]**: лучше в 7 задачах,
+одинаково в 2, хуже в 1.
 
-![per-task scores](results/scores.png)
+![оценки по задачам](results/scores.png)
 
-What this shows:
-- **A strong model already writes good tests for small modules** (92.5%), so the absolute
-  gain is small. The useful framing is the misses: the skill **cut the number of injected
-  bugs that slipped through from 20 to 12**.
-- The gain is exactly where the skill aims: surviving *constant* mutants (untested unit
-  sizes, default values) fell from 14 to 7, *comparison* mutants (`<` vs `<=`) from 4 to 2.
-- It costs **3.5× more tokens**: the agent iterates with mutation feedback. At API prices
-  that is still well under a cent per module.
-- The skill makes the agent write more ambitious tests, and more of them are wrong
-  (1.4 vs 0.9 per task). The harness excludes them before scoring.
-- In 5 of 10 skill episodes the agent did not finish within the 6-turn limit: it ran mutation testing
-  before plain pytest, and it repeatedly guessed new expected values for failing tests.
-  Both are addressed in skill v0.2 (*run pytest first; read the actual value; at most two
-  attempts per failing case*). Re-running the benchmark with v0.2 is the next step.
-- 10 tasks and one repeat: the confidence interval excludes zero, but treat the size of
-  the effect as approximate.
+Выводы:
+- **Сильная модель и без навыка пишет хорошие тесты для небольших модулей** (92,5%), поэтому
+  абсолютный прирост небольшой. Нагляднее смотреть на пропуски: с навыком число
+  пропущенных багов **сократилось с 20 до 12**.
+- Прирост ровно там, куда целится навык: непроверенных констант (размеры единиц,
+  значения по умолчанию) стало 7 вместо 14, сравнений (`<` vs `<=`) — 2 вместо 4.
+- Цена — **в 3,5 раза больше токенов**: агент дорабатывает тесты по отчёту mutation
+  testing. По ценам API это всё равно меньше цента на модуль.
+- С навыком агент пишет более амбициозные тесты, и неверных среди них больше (1,4 против 0,9
+  на задачу). Бенчмарк исключает их до подсчёта.
+- В 5 из 10 эпизодов с навыком агент не уложился в лимит 6 ходов: запускал mutation testing
+  раньше обычного pytest и подбирал новые ожидаемые значения для упавших тестов наугад.
+  Обе проблемы исправлены в навыке v0.2 («сначала pytest; читай фактическое значение;
+  не больше двух попыток на один тест»). Следующий шаг — перезапуск бенчмарка с v0.2.
+- 10 задач и один прогон: доверительный интервал не включает ноль, но размер эффекта
+  стоит считать приблизительным.
 
-Full tables: [`results/RESULTS.md`](results/RESULTS.md). Every episode's transcript and
-final test file: [`results/gpt-oss-120b/`](results/gpt-oss-120b).
+Полные таблицы — [`results/RESULTS.md`](results/RESULTS.md); переписка агента и итоговые
+тесты по каждой задаче — [`results/gpt-oss-120b/`](results/gpt-oss-120b).
 
-### Reproduce
+### Как воспроизвести
 
 ```bash
 pip install -r requirements.txt && pip install -e .
-export OPENAI_API_KEY=...                                   # any OpenAI-compatible API
-export OPENAI_BASE_URL=https://api.groq.com/openai/v1       # e.g. Groq free tier
+export OPENAI_API_KEY=... OPENAI_BASE_URL=https://api.groq.com/openai/v1
 python -m twbench.run --model openai/gpt-oss-120b --name gpt-oss-120b \
     --conditions baseline,skill,skill-text --reasoning-effort low --rpm 4
 python -m twbench.report --results results
 ```
 
-Runs are resumable: finished episodes are skipped, so a run stopped by rate limits
-continues where it stopped. Every episode keeps the full transcript and the final test
-file in `results/<model>/<task>/<condition>/r0/`.
+Прогон можно прерывать: готовые эпизоды пропускаются при повторном запуске, поэтому
+прогон, остановленный лимитами API, продолжится с того же места. Для каждого эпизода
+сохраняются полная переписка и итоговый файл тестов: `results/<модель>/<задача>/<условие>/r0/`.
 
-Local model instead of an API: `--backend hf --model Qwen/Qwen2.5-Coder-7B-Instruct`
-(needs a GPU; the notebook runs it on a free Colab T4).
+Если код оценки изменился, оценки можно пересчитать по сохранённым тестам без обращения
+к модели: `python -m twbench.rescore --results results`.
 
-## Repository layout
+Локальная модель вместо API: `--backend hf --model Qwen/Qwen2.5-Coder-7B-Instruct`
+(нужна видеокарта; в ноутбуке это запускается на бесплатной T4 в Colab).
+
+## Структура репозитория
 
 ```
-skills/test-writer/          the skill (this folder is what gets installed)
-  SKILL.md                   workflow and rules
-  references/                checklist, patterns, anti-patterns (loaded on demand)
-  scripts/mutation_score.py  mutation testing, stdlib + pytest only
-bench/tasks/                 10 modules under test
-bench/reference/             strong reference suites (the ceiling)
-bench/ceiling.json           ceiling scores and equivalent mutants
-src/twbench/                 benchmark harness: agent loop, backends, scoring, report
-notebooks/                   Colab notebook to run the benchmark for free
-tests/                       tests of the mutation engine, the harness and the report
+skills/test-writer/          навык (именно эта папка устанавливается)
+  SKILL.md                   порядок работы и правила
+  references/                чек-лист, паттерны, анти-паттерны (читаются по запросу)
+  scripts/mutation_score.py  mutation testing, только stdlib + pytest
+bench/tasks/                 10 модулей для тестирования
+bench/reference/             эталонные тесты (потолок)
+bench/ceiling.json           потолок и эквивалентные мутанты
+src/twbench/                 бенчмарк: цикл агента, бэкенды, оценка, отчёт
+results/                     результаты прогонов
+notebooks/                   ноутбук Colab для бесплатного запуска
+tests/                       тесты движка мутаций, бенчмарка и отчёта
 ```
 
-## Development
+## Разработка
 
 ```bash
 pip install -e ".[api,dev]"
-pytest                 # ~1.5 min
-pytest -m slow         # recomputes the ceiling, ~2 min
+pytest                 # около 2 минут
+pytest -m slow         # пересчёт потолка, около 2 минут
 ruff check src tests skills bench/reference
 ```
 
-## Limitations
+История версий навыка — в [`CHANGELOG.md`](CHANGELOG.md).
 
-- Python + pytest only.
-- 10 tasks is a small benchmark: treat differences of a few points as noise and look at
-  the confidence interval.
-- Small, self-contained modules. Real projects have I/O, databases and large classes;
-  the mutation script works there too, but the benchmark does not measure that.
-- The benchmark agent is a simple loop, not the real Claude Code or Codex CLI. It tests
-  the skill's content under identical conditions; behaviour inside each real agent can
-  differ.
+## Ограничения
 
-## License
+- Только Python и pytest.
+- Небольшие самостоятельные модули. В реальных проектах есть ввод-вывод, базы данных и
+  большие классы; скрипт работает и там, но бенчмарк этого не измеряет.
+- 10 задач — небольшой бенчмарк: разницу в несколько пунктов смотри вместе с доверительным
+  интервалом.
+- Агент в бенчмарке — простой цикл, а не настоящий Claude Code или Codex CLI. Он проверяет
+  содержание навыка в одинаковых условиях; поведение внутри реальных агентов может отличаться.
+
+## Лицензия
 
 MIT
